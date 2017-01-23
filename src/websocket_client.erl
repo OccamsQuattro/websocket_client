@@ -100,7 +100,8 @@
          handler   :: {module(), HState :: term()},
          buffer = <<>> :: binary(),
          reconnect :: boolean(),
-         ka_attempts = 0 :: non_neg_integer()
+         ka_attempts = 0 :: non_neg_integer(),
+         reason :: {term(), term()}
         }).
 
 %% @doc Start the websocket client
@@ -358,9 +359,10 @@ handle_info(keepalive, KAState, #context{ wsreq=WSReq, ka_attempts=KAAttempts }=
 %% match on it here
 handle_info({TransClosed, _Socket}, _CurrState,
             #context{
-               transport=#transport{ closed=TransClosed } %% NB: matched
+                reason = Reason,
+                transport=#transport{ closed=TransClosed } %% NB: matched
               }=Context) ->
-    disconnect({remote, closed}, Context);
+    disconnect(Reason, Context);
 handle_info({TransError, _Socket, Reason},
             _AnyState,
             #context{
@@ -497,9 +499,10 @@ handle_websocket_frame(Data, #context{}=Context0) ->
                                       handler={Handler, HState0},
                                       wsreq=WSReqN,
                                       buffer=BufferN}};
-        {close, _Reason, WSReqN} ->
+        {close, Reason, WSReqN} ->
             {next_state, disconnected, Context#context{wsreq=WSReqN,
-                                                       buffer= <<>>}}
+                                                       buffer= <<>>,
+                                                       reason= Reason}}
     end.
 
 
