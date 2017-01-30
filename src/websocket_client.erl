@@ -277,10 +277,10 @@ disconnect(Reason, #context{
                      }=Context) ->
     case Handler:ondisconnect(Reason, HState0) of
         {ok, HState1} ->
-            {next_state, disconnected, Context#context{buffer = <<>>, handler={Handler, HState1}}};
+            {next_state, disconnected, Context#context{buffer = <<>>, handler={Handler, HState1}, reason=Reason}};
         {reconnect, HState1} ->
             ok = gen_fsm:send_event(self(), connect),
-            {next_state, disconnected, Context#context{handler={Handler, HState1}}};
+            {next_state, disconnected, Context#context{handler={Handler, HState1}, reason=Reason}};
         {close, Reason1, HState1} ->
             ok = websocket_close(WSReq0, Handler, HState1, Reason1),
             {stop, Reason1, Context#context{handler={Handler, HState1}}}
